@@ -1,31 +1,31 @@
-from pypdf import PdfReader
-from pathlib import Path
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_ollama import OllamaEmbeddings
 
+DATA_PATH = "../data/Contrat_apprentissage_SIM_P27.pdf"
+DB_PATH = "../vectorstore"
 
-def load_pdf(file_path: str) -> str:
-    """
-    Charge un fichier PDF et retourne son texte brut.
-    """
-    reader = PdfReader(file_path)
-    text = ""
+def create_vectorstore():
+    print("Chargement du PDF...")
+    loader = PyPDFLoader(DATA_PATH)
+    documents = loader.load()
 
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text + "\n"
+    print("Découpage en chunks...")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=150
+    )
+    texts = text_splitter.split_documents(documents)
 
-    return text
+    print("Création des embeddings avec qwen3-embedding...")
+    embeddings = OllamaEmbeddings(model="qwen3-embedding")
 
+    print("Création de l’index FAISS...")
+    db = FAISS.from_documents(texts, embeddings)
 
-def load_all_pdfs(folder_path: str) -> str:
-    """
-    Charge tous les PDF d'un dossier et concatène leur contenu.
-    """
-    folder = Path(folder_path)
-    all_text = ""
+    db.save_local(DB_PATH)
+    print("Index sauvegardé avec succès.")
 
-    for pdf_file in folder.glob("*.pdf"):
-        print(f"Chargement : {pdf_file.name}")
-        all_text += load_pdf(str(pdf_file)) + "\n"
-
-    return all_text
+if __name__ == "__main__":
+    create_vectorstore()
