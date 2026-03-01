@@ -5,7 +5,6 @@ import streamlit as st
 from llm_chain import ChainConfig, format_sources, generate_answer
 from retriever import RetrievalConfig, retrieve_documents
 
-
 def run_app() -> None:
     st.set_page_config(page_title="Assistant Master SIM", layout="centered")
     st.title("Assistant académique Master SIM")
@@ -33,11 +32,23 @@ def run_app() -> None:
             st.warning("Merci de saisir une question.")
             return
 
-        retrieval_config = RetrievalConfig(top_k=top_k, min_similarity=min_similarity)
-        documents, _ = retrieve_documents(question, retrieval_config)
-
-        answer = generate_answer(question, documents, ChainConfig(llm_model=llm_model))
-        sources = format_sources(documents)
+        try:
+            retrieval_config = RetrievalConfig(top_k=top_k, min_similarity=min_similarity)
+            documents, _ = retrieve_documents(question, retrieval_config)
+            answer = generate_answer(question, documents, ChainConfig(llm_model=llm_model))
+            sources = format_sources(documents)
+        except FileNotFoundError as exc:
+            st.error(str(exc))
+            return
+        except ConnectionError:
+            st.error(
+                "Connexion Ollama impossible. Vérifie que Ollama est démarré "
+                "et que les modèles nécessaires sont disponibles."
+            )
+            return
+        except Exception as exc:
+            st.error(f"Erreur inattendue: {exc}")
+            return
 
         st.subheader("Réponse")
         st.write(answer)

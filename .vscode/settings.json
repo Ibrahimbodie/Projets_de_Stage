@@ -1,0 +1,28 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/env/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/src"
+  ],
+  "python.analysis.exclude": [
+    "**/env/**",
+    "**/__pycache__/**",
+    "**/.git/**"
+  ],
+  "files.exclude": {
+    "**/__pycache__": true
+  },
+  "cSpell.ignorePaths": [
+    "**/env/**",
+    "**/__pycache__/**"
+  ],
+  "cSpell.words": [
+    "langchain",
+    "ollama",
+    "faiss",
+    "qwen",
+    "vectorstore",
+    "retriever",
+    "streamlit",
+    "dataclass"
+  ]
+}

@@ -8,7 +8,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 
-DB_PATH = Path("../vectorstore")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DB_PATH = PROJECT_ROOT / "vectorstore"
 EMBEDDING_MODEL = "qwen3-embedding"
 
 
@@ -30,6 +31,11 @@ def _normalize_scores(raw_scores: Iterable[float]) -> List[float]:
 
 
 def load_vectorstore() -> FAISS:
+    if not DB_PATH.exists():
+        raise FileNotFoundError(
+            f"Index vectoriel introuvable: {DB_PATH}. Lance d'abord src/ingest.py."
+        )
+
     embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
     return FAISS.load_local(
         str(DB_PATH),
