@@ -1,46 +1,51 @@
-from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings, OllamaLLM
-from langchain.chains import RetrievalQA
+from __future__ import annotations
 
-DB_PATH = "../vectorstore"
+import streamlit as st
 
-def load_qa_chain():
-    embeddings = OllamaEmbeddings(model="qwen3-embedding")
+from llm_chain import ChainConfig, format_sources, generate_answer
+from retriever import RetrievalConfig, retrieve_documents
 
-    db = FAISS.load_local(
-        DB_PATH,
-        embeddings,
-        allow_dangerous_deserialization=True
+
+def run_app() -> None:
+    st.set_page_config(page_title="Assistant Master SIM", layout="centered")
+    st.title("Assistant académique Master SIM")
+    st.write(
+        "Je réponds uniquement à partir du contexte officiel du Master SIM. "
+        "Si la réponse n'est pas dans le document, je l'indiquerai clairement."
     )
 
-    retriever = db.as_retriever(search_kwargs={"k": 3})
+    with st.sidebar:
+        st.header("Réglages")
+        top_k = st.slider("Top K", min_value=1, max_value=8, value=4)
+        min_similarity = st.slider(
+            "Seuil de similarité (0-1)",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.3,
+            step=0.05,
+        )
+        llm_model = st.text_input("Modèle LLM", value="qwen3.5:27b")
 
-    llm = OllamaLLM(model="qwen3.5:27b")
+    question = st.text_area("Question de l’étudiant", placeholder="Tape la question ici")
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        return_source_documents=True
-    )
+    if st.button("Répondre", type="primary"):
+        if not question.strip():
+            st.warning("Merci de saisir une question.")
+            return
 
-    return qa_chain
+        retrieval_config = RetrievalConfig(top_k=top_k, min_similarity=min_similarity)
+        documents, _ = retrieve_documents(question, retrieval_config)
 
+        answer = generate_answer(question, documents, ChainConfig(llm_model=llm_model))
+        sources = format_sources(documents)
 
-def main():
-    qa = load_qa_chain()
+        st.subheader("Réponse")
+        st.write(answer)
 
-    print("Assistant prêt. Tape 'exit' pour quitter.\n")
-
-    while True:
-        query = input("Question: ")
-
-        if query.lower() == "exit":
-            break
-
-        result = qa.invoke({"query": query})
-        print("\nRéponse:\n", result["result"])
-        print("-" * 60)
+        if sources:
+            st.subheader("Sources")
+            st.write(", ".join(sources))
 
 
 if __name__ == "__main__":
-    main()
+    run_app()
