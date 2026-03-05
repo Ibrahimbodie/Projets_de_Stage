@@ -12,7 +12,7 @@ Le mode principal actuel est **terminal (CLI)**.
 4. Les segments sont indexés dans FAISS (`vectorstore/`).
 5. À chaque question:
    - récupération des passages les plus proches (`top_k`, seuil de similarité),
-   - génération de réponse avec `qwen3.5:27b` (Ollama),
+   - génération de réponse avec `qwen3.5:9b` (Ollama),
    - affichage des sources (pages).
 
 Si aucune information pertinente n'est trouvée, la réponse retourne:
@@ -47,7 +47,7 @@ bash run.sh
 Le script:
 - vérifie l'environnement virtuel,
 - démarre `ollama serve` si nécessaire,
-- télécharge les modèles requis si absents (`qwen3-embedding`, `qwen3.5:27b`),
+- télécharge les modèles requis si absents (`qwen3-embedding`, `qwen3.5:9b`),
 - reconstruit l'index vectoriel,
 - lance l'interface terminal.
 
@@ -76,7 +76,7 @@ env/bin/python src/cli.py --help
 Options utiles:
 - `--top-k` (défaut: `4`)
 - `--min-similarity` (défaut: `0.3`)
-- `--llm-model` (défaut: `qwen3.5:27b`)
+- `--llm-model` (défaut: `qwen3.5:9b`)
 
 ## Recréer uniquement l'index vectoriel
 
@@ -118,4 +118,3 @@ env/bin/streamlit run src/main.py
 
 - `PDF introuvable ...`
   - Vérifier le chemin: `data/Contrat_apprentissage_SIM_P27.pdf`
-

@@ -23,7 +23,7 @@ def run_app() -> None:
             value=0.3,
             step=0.05,
         )
-        llm_model = st.text_input("Modèle LLM", value="qwen3.5:27b")
+        llm_model = st.text_input("Modèle LLM", value="qwen3.5:9b")
 
     question = st.text_area("Question de l’étudiant", placeholder="Tape la question ici")
 

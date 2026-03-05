@@ -33,7 +33,7 @@ ensure_model() {
 }
 
 ensure_model "qwen3-embedding"
-ensure_model "qwen3.5:27b"
+ensure_model "qwen3.5:9b"
 
 echo "Création / mise à jour de l'index vectoriel..."
 "$ROOT_DIR/env/bin/python" "$ROOT_DIR/src/ingest.py"

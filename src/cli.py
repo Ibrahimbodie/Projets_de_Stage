@@ -20,10 +20,21 @@ def answer_once(
     top_k: int,
     min_similarity: float,
     llm_model: str,
+    llm_timeout: float,
 ) -> None:
+    print("Recherche des passages pertinents...", flush=True)
     retrieval_config = RetrievalConfig(top_k=top_k, min_similarity=min_similarity)
     documents, _ = retrieve_documents(question, retrieval_config)
-    answer = generate_answer(question, documents, ChainConfig(llm_model=llm_model))
+    print(
+        f"Génération de la réponse avec {llm_model} "
+        f"(timeout: {llm_timeout:.0f}s)...",
+        flush=True,
+    )
+    answer = generate_answer(
+        question,
+        documents,
+        ChainConfig(llm_model=llm_model, request_timeout=llm_timeout),
+    )
     sources = format_sources(documents)
 
     print("\nRéponse:")
@@ -31,7 +42,7 @@ def answer_once(
     _print_sources(sources)
 
 
-def run_interactive(top_k: int, min_similarity: float, llm_model: str) -> None:
+def run_interactive(top_k: int, min_similarity: float, llm_model: str, llm_timeout: float) -> None:
     print("Assistant académique Master SIM (terminal)")
     print("Commande: 'exit' pour quitter.\n")
 
@@ -45,7 +56,7 @@ def run_interactive(top_k: int, min_similarity: float, llm_model: str) -> None:
             break
 
         try:
-            answer_once(question, top_k, min_similarity, llm_model)
+            answer_once(question, top_k, min_similarity, llm_model, llm_timeout)
             print()
         except Exception as exc:
             print(f"Erreur inattendue: {exc}\n")
@@ -68,8 +79,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--llm-model",
         type=str,
-        default="qwen3.5:27b",
+        default="qwen3.5:9b",
         help="Nom du modèle Ollama pour la génération.",
+    )
+    parser.add_argument(
+        "--llm-timeout",
+        type=float,
+        default=120.0,
+        help="Temps max d'attente de réponse du LLM (en secondes).",
     )
     return parser.parse_args()
 
@@ -82,9 +99,15 @@ def main() -> None:
             if not question:
                 print("Erreur: la question est vide.")
                 return
-            answer_once(question, args.top_k, args.min_similarity, args.llm_model)
+            answer_once(
+                question,
+                args.top_k,
+                args.min_similarity,
+                args.llm_model,
+                args.llm_timeout,
+            )
             return
-        run_interactive(args.top_k, args.min_similarity, args.llm_model)
+        run_interactive(args.top_k, args.min_similarity, args.llm_model, args.llm_timeout)
     except FileNotFoundError as exc:
         print(str(exc))
     except ConnectionError:

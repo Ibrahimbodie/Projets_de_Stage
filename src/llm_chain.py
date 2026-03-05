@@ -12,7 +12,9 @@ FALLBACK_MESSAGE = "Information non trouvée dans les règlements officiels."
 
 @dataclass
 class ChainConfig:
-    llm_model: str = "qwen3.5:27b"
+    llm_model: str = "qwen3.5:9b"
+    request_timeout: float = 120.0
+    num_predict: int = 256
 
 
 def build_prompt() -> PromptTemplate:
@@ -52,11 +54,40 @@ def format_sources(documents: List[Document]) -> List[str]:
     return [f"Page {page}" for page in pages]
 
 
+def _build_excerpts_answer(documents: List[Document], max_docs: int = 3, max_chars: int = 350) -> str:
+    excerpts: List[str] = []
+    for doc in documents[:max_docs]:
+        page = doc.metadata.get("page")
+        page_label = f"Page {page + 1}" if isinstance(page, int) else "Page inconnue"
+        text = " ".join(doc.page_content.split())
+        if len(text) > max_chars:
+            text = text[:max_chars].rstrip() + "..."
+        excerpts.append(f"[{page_label}] {text}")
+    return "\n\n".join(excerpts)
+
+
 def generate_answer(question: str, documents: List[Document], config: ChainConfig) -> str:
     if not documents:
         return FALLBACK_MESSAGE
 
     prompt = build_prompt()
     context = format_context(documents)
-    llm = OllamaLLM(model=config.llm_model)
-    return llm.invoke(prompt.format(context=context, question=question))
+    llm = OllamaLLM(
+        model=config.llm_model,
+        temperature=0,
+        num_predict=config.num_predict,
+        sync_client_kwargs={"timeout": config.request_timeout},
+    )
+    try:
+        answer = llm.invoke(prompt.format(context=context, question=question))
+        if isinstance(answer, str) and answer.strip():
+            return answer
+        return _build_excerpts_answer(documents)
+    except Exception as exc:
+        details = str(exc).strip() or exc.__class__.__name__
+        raise RuntimeError(
+            "Le modèle Ollama n'a pas répondu à temps ou a échoué. "
+            "Réessaie avec un timeout plus grand (--llm-timeout) "
+            "ou un modèle plus léger."
+            f" Détail: {details}"
+        ) from exc
