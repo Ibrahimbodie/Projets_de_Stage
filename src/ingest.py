@@ -6,7 +6,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_PATH = PROJECT_ROOT / "data" / "Contrat_apprentissage_SIM_P27.pdf"
+DATA_PATH = PROJECT_ROOT / "data" / "Contrat_apprentissage_SIM.pdf"
 DB_PATH = PROJECT_ROOT / "vectorstore"
 EMBEDDING_MODEL = "qwen3-embedding"
 CHUNK_SIZE = 800

@@ -1,8 +1,5 @@
-langchain
-langchain-community
-langchain-core
-langchain-ollama
-langchain-text-splitters
-faiss-cpu
-pypdf
-streamlit
+langchain_community==0.4.1
+langchain_core==1.4.0
+langchain_ollama==1.1.0
+langchain_text_splitters==1.1.2
+streamlit==1.57.0
