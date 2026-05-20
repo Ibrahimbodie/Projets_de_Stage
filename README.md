@@ -1,120 +1,235 @@
-# Assistant académique Master SIM
+# 🎓 Assistant Virtuel Académique - Master SIM
 
-Assistant RAG (Retrieval-Augmented Generation) pour répondre aux questions des étudiants à partir d'un document officiel PDF du Master SIM.
+## 🇫🇷 Version Française
 
-Le mode principal actuel est **terminal (CLI)**.
+### 📌 Description
 
-## Fonctionnement
+Ce projet consiste en la conception d’un assistant virtuel intelligent basé sur les technologies RAG (Retrieval-Augmented Generation) pour aider les étudiants du Master SIM à comprendre les règlements académiques de manière simple et interactive.
 
-1. Le PDF est chargé depuis `data/Contrat_apprentissage_SIM_P27.pdf`.
-2. Le texte est découpé en segments (`chunk_size=800`, `chunk_overlap=150`).
-3. Les embeddings sont générés via `qwen3-embedding` (Ollama).
-4. Les segments sont indexés dans FAISS (`vectorstore/`).
-5. À chaque question:
-   - récupération des passages les plus proches (`top_k`, seuil de similarité),
-   - génération de réponse avec `qwen3.5:9b` (Ollama),
-   - affichage des sources (pages).
+Le système permet de :
+- interroger des documents académiques en langage naturel,
+- rechercher les informations pertinentes,
+- générer des réponses pédagogiques en français simple,
+- afficher les sources utilisées.
 
-Si aucune information pertinente n'est trouvée, la réponse retourne:
-`Information non trouvée dans les règlements officiels.`
+L’assistant utilise des modèles LLM locaux via Ollama ainsi qu’une base vectorielle FAISS.
 
-## Prérequis
+---
 
-- Linux/macOS (scripts bash)
-- Python 3.12 (testé dans ce projet)
-- [Ollama](https://ollama.com/download) installé
-- Accès réseau pour télécharger les modèles Ollama au premier lancement
+## 🚀 Fonctionnalités
 
-## Installation
+- 📄 Lecture de documents PDF, TXT et DOCX
+- 🔍 Recherche sémantique avec FAISS
+- 🤖 Génération de réponses avec Ollama
+- 💬 Interface conversationnelle avec Streamlit
+- 📚 Affichage des sources utilisées
+- 📂 Upload de documents utilisateur
+- 🧠 Assistant pédagogique en français simple
 
-Depuis la racine du projet:
+---
 
-```bash
-python3 -m venv env
-source env/bin/activate
-pip install --upgrade pip
-pip install langchain langchain-community langchain-core langchain-ollama langchain-text-splitters faiss-cpu pypdf streamlit
-```
-
-> `streamlit` reste utile si vous voulez lancer l'UI web legacy (`src/main.py`), même si le mode actif est terminal.
-
-## Lancement rapide (recommandé)
-
-```bash
-bash run.sh
-```
-
-Le script:
-- vérifie l'environnement virtuel,
-- démarre `ollama serve` si nécessaire,
-- télécharge les modèles requis si absents (`qwen3-embedding`, `qwen3.5:9b`),
-- reconstruit l'index vectoriel,
-- lance l'interface terminal.
-
-## Utilisation CLI
-
-### Mode interactif
-
-```bash
-env/bin/python src/cli.py
-```
-
-Commandes de sortie: `exit`, `quit`, `q`
-
-### Mode question unique
-
-```bash
-env/bin/python src/cli.py --question "Quelle est la durée de l'apprentissage ?"
-```
-
-### Options disponibles
-
-```bash
-env/bin/python src/cli.py --help
-```
-
-Options utiles:
-- `--top-k` (défaut: `4`)
-- `--min-similarity` (défaut: `0.3`)
-- `--llm-model` (défaut: `qwen3.5:9b`)
-
-## Recréer uniquement l'index vectoriel
-
-```bash
-env/bin/python src/ingest.py
-```
-
-## Lancer l'ancienne interface Streamlit (optionnel)
-
-```bash
-env/bin/streamlit run src/main.py
-```
-
-## Structure du projet
+## 🏗️ Architecture du Projet
 
 ```text
-.
-├── data/
-│   └── Contrat_apprentissage_SIM_P27.pdf
-├── src/
-│   ├── ingest.py       # Chargement PDF + indexation FAISS
-│   ├── retriever.py    # Recherche vectorielle + filtrage
-│   ├── llm_chain.py    # Prompt + génération de réponse
-│   ├── cli.py          # Interface terminal
-│   └── main.py         # Interface Streamlit (legacy)
-├── vectorstore/        # Index FAISS généré
-└── run.sh              # Script d'exécution principal
+src/
+│
+├── main.py            # Interface Streamlit
+├── ingest.py          # Ingestion des documents
+├── retriever.py       # Recherche sémantique
+├── llm_chain.py       # Génération des réponses
+├── user_upload.py     # Gestion des documents utilisateur
 ```
 
-## Dépannage
+---
 
-- `Index vectoriel introuvable ... Lance d'abord src/ingest.py.`
-  - Exécuter: `env/bin/python src/ingest.py`
+## 🛠️ Technologies Utilisées
 
-- `Connexion Ollama impossible...`
-  - Vérifier que `ollama serve` tourne.
-  - Vérifier que les modèles sont présents:
-    - `ollama list`
+- Python
+- Streamlit
+- LangChain
+- Ollama
+- FAISS
+- Qwen2.5
+- Sentence Transformers
 
-- `PDF introuvable ...`
-  - Vérifier le chemin: `data/Contrat_apprentissage_SIM_P27.pdf`
+---
+
+## ⚙️ Installation
+
+### 1. Cloner le projet
+
+```bash
+git clone <repo_url>
+cd project
+```
+
+### 2. Créer un environnement virtuel
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Installer les dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Installer Ollama
+
+https://ollama.com
+
+### 5. Télécharger le modèle
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+### 6. Lancer Ollama
+
+```bash
+ollama serve
+```
+
+### 7. Créer la base vectorielle
+
+```bash
+python src/ingest.py
+```
+
+### 8. Lancer l’application
+
+```bash
+streamlit run src/main.py
+```
+
+---
+
+## 📸 Interface
+
+Ajouter ici des captures d’écran du projet.
+
+---
+
+## 🎯 Objectif du Projet
+
+Ce projet a été réalisé dans le cadre d’un stage de Master en Intelligence Artificielle afin de développer un assistant académique intelligent capable d’améliorer l’accès aux règlements universitaires.
+
+---
+
+# 🇬🇧 English Version
+
+## 📌 Description
+
+This project consists of building an intelligent virtual assistant based on Retrieval-Augmented Generation (RAG) technologies to help Master SIM students better understand academic regulations through natural language interaction.
+
+The system is able to:
+- answer questions from academic documents,
+- retrieve relevant information,
+- generate pedagogical answers in simple French,
+- display the sources used.
+
+The assistant uses local LLMs through Ollama and a FAISS vector database.
+
+---
+
+## 🚀 Features
+
+- 📄 PDF, TXT and DOCX document support
+- 🔍 Semantic search using FAISS
+- 🤖 Answer generation with Ollama
+- 💬 Conversational interface with Streamlit
+- 📚 Source citation display
+- 📂 User document upload
+- 🧠 Educational assistant in simple French
+
+---
+
+## 🏗️ Project Architecture
+
+```text
+src/
+│
+├── main.py            # Streamlit interface
+├── ingest.py          # Document ingestion
+├── retriever.py       # Semantic retrieval
+├── llm_chain.py       # Answer generation
+├── user_upload.py     # User document management
+```
+
+---
+
+## 🛠️ Technologies Used
+
+- Python
+- Streamlit
+- LangChain
+- Ollama
+- FAISS
+- Qwen2.5
+- Sentence Transformers
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
+
+```bash
+git clone <repo_url>
+cd project
+```
+
+### 2. Create virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Install Ollama
+
+https://ollama.com
+
+### 5. Download model
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+### 6. Start Ollama
+
+```bash
+ollama serve
+```
+
+### 7. Build vector database
+
+```bash
+python src/ingest.py
+```
+
+### 8. Run application
+
+```bash
+streamlit run src/main.py
+```
+
+---
+
+## 📸 Interface
+
+Add screenshots of the application here.
+
+---
+
+## 🎯 Project Objective
+
+This project was developed as part of a Master's internship in Artificial Intelligence to create an intelligent academic assistant capable of improving access to university regulations.
