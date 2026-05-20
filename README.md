@@ -108,7 +108,7 @@ streamlit run src/main.py
 
 ## 📸 Interface
 
-Ajouter ici des captures d’écran du projet.
+![alt text](image.png)
 
 ---
 
@@ -226,7 +226,7 @@ streamlit run src/main.py
 
 ## 📸 Interface
 
-Add screenshots of the application here.
+
 ![alt text](image.png)
 
 ---
