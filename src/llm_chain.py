@@ -7,87 +7,189 @@ from langchain_ollama import OllamaLLM
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 
-FALLBACK_MESSAGE = "Information non trouvée dans les règlements officiels."
+FALLBACK_MESSAGE = (
+    "Information non trouvée dans "
+    "les règlements officiels."
+)
 
+
+# --------------------------------------------------
+# CONFIGURATION LLM
+# --------------------------------------------------
 
 @dataclass
 class ChainConfig:
-    llm_model: str = "qwen3.5:9b"
-    request_timeout: float = 120.0
-    num_predict: int = 256
 
+    llm_model: str = "qwen2.5:3b"
+
+    request_timeout: float = 300.0
+
+    num_predict: int = 512
+
+
+# --------------------------------------------------
+# PROMPT
+# --------------------------------------------------
 
 def build_prompt() -> PromptTemplate:
+
     template = (
-        "Tu es un assistant académique officiel du programme Master SIM à VNU-IS.\n"
-        "Ta mission est de répondre aux questions des étudiants en utilisant exclusivement les informations contenues dans le contexte fourni.\n\n"
-        "Règles strictes :\n"
-        "- N'utilise que les informations présentes dans le contexte.\n"
-        "- N'ajoute aucune information provenant de tes connaissances générales.\n"
-        "- Si l'information n'est pas explicitement présente dans le contexte, réponds exactement :\n"
-        f"  '{FALLBACK_MESSAGE}'\n\n"
-        "Reformule les informations de manière claire et structurée.\n"
-        "Lorsque c’est possible, indique la page ou la section mentionnée dans le contexte.\n\n"
-        "Contexte :\n{context}\n\n"
-        "Question :\n{question}\n\n"
-        "Réponse :"
+        "Tu es un assistant académique intelligent "
+        "du Master SIM à VNU-IS.\n\n"
+
+        "Ton rôle est d'aider les étudiants "
+        "à comprendre facilement les règlements "
+        "académiques.\n\n"
+
+        "Tu dois répondre en français SIMPLE, "
+        "naturel et pédagogique.\n\n"
+
+        "RÈGLES IMPORTANTES :\n"
+        "- Utilise uniquement les informations "
+        "présentes dans le contexte.\n"
+        "- Reformule avec tes propres mots.\n"
+        "- N'affiche jamais directement "
+        "les paragraphes du document.\n"
+        "- Explique les règles comme à un étudiant.\n"
+        "- Donne des réponses claires "
+        "et faciles à comprendre.\n"
+        "- Si l'information n'existe pas dans "
+        "le contexte, répond exactement :\n"
+        "'Information non trouvée dans "
+        "les règlements officiels.'\n\n"
+
+        "Contexte :\n"
+        "{context}\n\n"
+
+        "Question de l'étudiant :\n"
+        "{question}\n\n"
+
+        "Réponse pédagogique :"
     )
+
     return PromptTemplate.from_template(template)
 
 
-def format_context(documents: List[Document]) -> str:
+# --------------------------------------------------
+# Filter conversationnel
+# --------------------------------------------------
+
+
+
+# --------------------------------------------------
+# FORMAT CONTEXTE
+# --------------------------------------------------
+
+def format_context(
+    documents: List[Document],
+) -> str:
+
     parts = []
+
     for doc in documents:
+
         page = doc.metadata.get("page")
-        page_label = f"Page {page + 1}" if isinstance(page, int) else "Page inconnue"
-        parts.append(f"[{page_label}]\n{doc.page_content}")
+
+        page_label = (
+            f"Page {page + 1}"
+            if isinstance(page, int)
+            else "Page inconnue"
+        )
+
+        clean_text = " ".join(
+            doc.page_content.split()
+        )
+
+        parts.append(
+            f"[{page_label}]\n{clean_text}"
+        )
+
     return "\n\n".join(parts)
 
 
-def format_sources(documents: List[Document]) -> List[str]:
+# --------------------------------------------------
+# FORMAT SOURCES
+# --------------------------------------------------
+
+def format_sources(
+    documents: List[Document],
+) -> List[str]:
+
     pages = []
+
     for doc in documents:
+
         page = doc.metadata.get("page")
+
         if isinstance(page, int):
+
             pages.append(page + 1)
+
     pages = sorted(set(pages))
-    return [f"Page {page}" for page in pages]
+
+    return [
+        f"Page {page}"
+        for page in pages
+    ]
 
 
-def _build_excerpts_answer(documents: List[Document], max_docs: int = 3, max_chars: int = 350) -> str:
-    excerpts: List[str] = []
-    for doc in documents[:max_docs]:
-        page = doc.metadata.get("page")
-        page_label = f"Page {page + 1}" if isinstance(page, int) else "Page inconnue"
-        text = " ".join(doc.page_content.split())
-        if len(text) > max_chars:
-            text = text[:max_chars].rstrip() + "..."
-        excerpts.append(f"[{page_label}] {text}")
-    return "\n\n".join(excerpts)
+# --------------------------------------------------
+# GENERATION REPONSE
+# --------------------------------------------------
 
+def generate_answer(
+    question: str,
+    documents: List[Document],
+    config: ChainConfig,
+) -> str:
 
-def generate_answer(question: str, documents: List[Document], config: ChainConfig) -> str:
     if not documents:
+
         return FALLBACK_MESSAGE
 
     prompt = build_prompt()
+
     context = format_context(documents)
+
     llm = OllamaLLM(
         model=config.llm_model,
-        temperature=0,
+        temperature=0.2,
         num_predict=config.num_predict,
-        sync_client_kwargs={"timeout": config.request_timeout},
+        sync_client_kwargs={
+            "timeout": config.request_timeout
+        },
     )
+
     try:
-        answer = llm.invoke(prompt.format(context=context, question=question))
-        if isinstance(answer, str) and answer.strip():
-            return answer
-        return _build_excerpts_answer(documents)
+
+        answer = llm.invoke(
+            prompt.format(
+                context=context,
+                question=question,
+            )
+        )
+
+        if isinstance(answer, str):
+
+            clean_answer = answer.strip()
+
+            if clean_answer:
+
+                return clean_answer
+
+        return (
+            "Je n'ai pas réussi à générer "
+            "une réponse claire."
+        )
+
     except Exception as exc:
-        details = str(exc).strip() or exc.__class__.__name__
+
+        details = (
+            str(exc).strip()
+            or exc.__class__.__name__
+        )
+
         raise RuntimeError(
-            "Le modèle Ollama n'a pas répondu à temps ou a échoué. "
-            "Réessaie avec un timeout plus grand (--llm-timeout) "
-            "ou un modèle plus léger."
-            f" Détail: {details}"
+            "Erreur génération Ollama : "
+            f"{details}"
         ) from exc
