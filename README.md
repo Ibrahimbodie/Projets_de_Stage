@@ -227,6 +227,7 @@ streamlit run src/main.py
 ## 📸 Interface
 
 Add screenshots of the application here.
+![alt text](image.png)
 
 ---
 
