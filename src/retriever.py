@@ -2,41 +2,48 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 DB_PATH = PROJECT_ROOT / "vectorstore"
+
 EMBEDDING_MODEL = "qwen3-embedding"
 
 
+# --------------------------------------------------
+# CONFIGURATION RETRIEVAL
+# --------------------------------------------------
+
 @dataclass
 class RetrievalConfig:
-    top_k: int = 4
-    min_similarity: float = 0.3
+
+    top_k: int = 6
+
+    max_distance: float = 1.5
 
 
-def _normalize_scores(raw_scores: Iterable[float]) -> List[float]:
-    scores = list(raw_scores)
-    if not scores:
-        return []
-    min_score = min(scores)
-    max_score = max(scores)
-    if max_score == min_score:
-        return [1.0 for _ in scores]
-    return [(score - min_score) / (max_score - min_score) for score in scores]
-
+# --------------------------------------------------
+# LOAD VECTORSTORE
+# --------------------------------------------------
 
 def load_vectorstore() -> FAISS:
+
     if not DB_PATH.exists():
+
         raise FileNotFoundError(
-            f"Index vectoriel introuvable: {DB_PATH}. Lance d'abord src/ingest.py."
+            f"Index vectoriel introuvable : "
+            f"{DB_PATH}"
         )
 
-    embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+    embeddings = OllamaEmbeddings(
+        model=EMBEDDING_MODEL
+    )
+
     return FAISS.load_local(
         str(DB_PATH),
         embeddings,
@@ -44,23 +51,57 @@ def load_vectorstore() -> FAISS:
     )
 
 
+# --------------------------------------------------
+# DISTANCE -> SIMILARITE
+# --------------------------------------------------
+
+def distance_to_similarity(
+    distance: float,
+) -> float:
+
+    similarity = 1 / (1 + distance)
+
+    return round(similarity, 4)
+
+
+# --------------------------------------------------
+# RETRIEVE DOCUMENTS
+# --------------------------------------------------
+
 def retrieve_documents(
     query: str,
     config: RetrievalConfig,
 ) -> Tuple[List[Document], List[float]]:
+
     db = load_vectorstore()
-    results = db.similarity_search_with_score(query, k=config.top_k)
+
+    results = db.similarity_search_with_score(
+        query,
+        k=config.top_k,
+    )
+
     if not results:
+
         return [], []
 
-    documents, raw_scores = zip(*results)
-    normalized = _normalize_scores(raw_scores)
-
     filtered_docs: List[Document] = []
+
     filtered_scores: List[float] = []
-    for doc, score in zip(documents, normalized):
-        if score >= config.min_similarity:
+
+    for doc, distance in results:
+
+        if distance <= config.max_distance:
+
+            similarity = (
+                distance_to_similarity(
+                    distance
+                )
+            )
+
             filtered_docs.append(doc)
-            filtered_scores.append(score)
+
+            filtered_scores.append(
+                similarity
+            )
 
     return filtered_docs, filtered_scores

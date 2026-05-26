@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import streamlit as st
 
 from llm_chain import (
@@ -75,21 +76,25 @@ with st.sidebar:
         "Top K",
         min_value=1,
         max_value=10,
-        value=2,
+        value=6,
     )
 
-    min_similarity = st.slider(
-        "Seuil de similarité",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.3,
-        step=0.05,
+    max_distance = st.slider(
+        "Distance maximale",
+        min_value=0.5,
+        max_value=3.0,
+        value=1.5,
+        step=0.1,
     )
 
     llm_model = st.selectbox(
         "Modèle Ollama",
         [
             "qwen2.5:3b",
+            "qwen3.5:9b",
+            "kimi-k2.6:cloud",
+            "llama3.2:3b",
+            "mistral:7b",
         ],
         index=0,
     )
@@ -97,7 +102,7 @@ with st.sidebar:
     st.markdown("---")
 
     # --------------------------------------------------
-    # UPLOAD DOCUMENTS
+    # DOCUMENTS
     # --------------------------------------------------
 
     st.subheader("📂 Documents utilisateur")
@@ -124,7 +129,9 @@ with st.sidebar:
     # RESET CHAT
     # --------------------------------------------------
 
-    if st.button("🗑️ Effacer la conversation"):
+    if st.button(
+        "🗑️ Effacer la conversation"
+    ):
 
         st.session_state.messages = []
 
@@ -136,9 +143,13 @@ with st.sidebar:
 
 for message in st.session_state.messages:
 
-    with st.chat_message(message["role"]):
+    with st.chat_message(
+        message["role"]
+    ):
 
-        st.markdown(message["content"])
+        st.markdown(
+            message["content"]
+        )
 
 # --------------------------------------------------
 # INPUT UTILISATEUR
@@ -162,7 +173,9 @@ if question:
 
         "merci": "Je vous en prie 😊",
 
-        "merci beaucoup": "Avec plaisir 😊",
+        "merci beaucoup": (
+            "Avec plaisir 😊"
+        ),
 
         "bonjour": (
             "Bonjour 👋 "
@@ -192,11 +205,12 @@ if question:
 
     if normalized_question in small_talk:
 
-        response = small_talk[
-            normalized_question
-        ]
+        response = (
+            small_talk[
+                normalized_question
+            ]
+        )
 
-        # Message utilisateur
         st.session_state.messages.append(
             {
                 "role": "user",
@@ -208,8 +222,9 @@ if question:
 
             st.markdown(question)
 
-        # Réponse assistant
-        with st.chat_message("assistant"):
+        with st.chat_message(
+            "assistant"
+        ):
 
             st.markdown(response)
 
@@ -244,18 +259,28 @@ if question:
     with st.chat_message("assistant"):
 
         with st.spinner(
-            "Recherche des informations en cours..."
+            "Recherche des informations..."
         ):
 
             try:
 
-                # Configuration retrieval
-                retrieval_config = RetrievalConfig(
-                    top_k=top_k,
-                    min_similarity=min_similarity,
+                retrieval_config = (
+                    RetrievalConfig(
+                        top_k=top_k,
+                        max_distance=max_distance,
+                    )
                 )
 
-                # Recherche documents
+                # --------------------------------------------------
+                # TEMPS DEBUT
+                # --------------------------------------------------
+
+                start_time = time.time()
+
+                # --------------------------------------------------
+                # RECHERCHE DOCUMENTS
+                # --------------------------------------------------
+
                 documents, scores = (
                     retrieve_documents(
                         question,
@@ -263,7 +288,10 @@ if question:
                     )
                 )
 
-                # Génération réponse
+                # --------------------------------------------------
+                # GENERATION REPONSE
+                # --------------------------------------------------
+
                 answer = generate_answer(
                     question,
                     documents,
@@ -273,32 +301,130 @@ if question:
                     ),
                 )
 
-                # Sources
-                sources = format_sources(
-                    documents
-                )
+                # --------------------------------------------------
+                # TEMPS FIN
+                # --------------------------------------------------
 
-                # Affichage réponse
-                st.markdown(answer)
+                end_time = time.time()
+
+                response_time = (
+                    end_time - start_time
+                )
 
                 # --------------------------------------------------
                 # SOURCES
                 # --------------------------------------------------
 
-                if sources:
+                sources = format_sources(
+                    documents
+                )
 
-                    st.markdown(
-                        "### 📚 Sources"
+                # --------------------------------------------------
+                # AFFICHAGE REPONSE
+                # --------------------------------------------------
+
+                st.markdown(answer)
+
+                st.markdown("---")
+
+                # --------------------------------------------------
+                # METRIQUES
+                # --------------------------------------------------
+
+                col1, col2, col3 = (
+                    st.columns(3)
+                )
+
+                # Temps réponse
+                with col1:
+
+                    st.metric(
+                        "⏱️ Temps réponse",
+                        f"{response_time:.2f} s"
                     )
 
-                    for source in sources:
+                # Chunks
+                with col2:
 
-                        st.markdown(
-                            f"- {source}"
+                    st.metric(
+                        "📄 Chunks",
+                        len(documents)
+                    )
+
+                # Confiance
+                with col3:
+
+                    if scores:
+
+                        avg_score = (
+                            sum(scores)
+                            / len(scores)
+                        )
+
+                        confidence = (
+                            "Élevée"
+                            if avg_score > 0.7
+                            else "Moyenne"
+                            if avg_score > 0.5
+                            else "Faible"
+                        )
+
+                        st.metric(
+                            "🎯 Confiance",
+                            confidence
                         )
 
                 # --------------------------------------------------
-                # SAUVEGARDE HISTORIQUE
+                # SOURCES DETAILLEES
+                # --------------------------------------------------
+
+                if sources:
+
+                    with st.expander(
+                        "📚 Sources utilisées"
+                    ):
+
+                        for idx, source in enumerate(
+                            sources
+                        ):
+
+                            st.markdown(
+                                f"### Source {idx+1}"
+                            )
+
+                            st.write(source)
+
+                            if idx < len(scores):
+
+                                st.write(
+                                    f"Score similarité : "
+                                    f"{scores[idx]:.4f}"
+                                )
+
+                # --------------------------------------------------
+                # CONTEXTE RECUPERE
+                # --------------------------------------------------
+
+                with st.expander(
+                    "🧠 Contexte récupéré"
+                ):
+
+                    for idx, doc in enumerate(
+                        documents
+                    ):
+
+                        st.markdown(
+                            f"### Chunk {idx+1}"
+                        )
+
+                        st.write(
+                            doc.page_content[:700]
+                        )
+
+                        st.markdown("---")
+
+                # --------------------------------------------------
+                # HISTORIQUE
                 # --------------------------------------------------
 
                 final_answer = answer

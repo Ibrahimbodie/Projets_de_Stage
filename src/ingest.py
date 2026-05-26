@@ -18,8 +18,8 @@ DB_PATH = PROJECT_ROOT / "vectorstore"
 
 EMBEDDING_MODEL = "qwen3-embedding"
 
-CHUNK_SIZE = 800
-CHUNK_OVERLAP = 150
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 200
 
 
 def load_document(file_path: Path):
