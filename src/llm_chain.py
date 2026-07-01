@@ -21,7 +21,7 @@ FALLBACK_MESSAGE = (
 @dataclass
 class ChainConfig:
 
-    llm_model: str = "qwen2.5:3b"
+    llm_model: str = "mistral:7b"
 
     request_timeout: float = 300.0
 

@@ -8,3 +8,4 @@ matplotlib
 openpyxl
 numpy
 tqdm
+deepeval

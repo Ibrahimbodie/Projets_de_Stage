@@ -106,6 +106,83 @@ streamlit run src/main.py
 
 ---
 
+## 🧪 Évaluation avec DeepEval
+
+DeepEval est utilisé pour évaluer scientifiquement la qualité du système RAG.
+Il ne sert pas à répondre aux étudiants en temps réel ; il sert à mesurer la
+qualité du retriever et de la génération sur un jeu de questions de test.
+
+Le fichier d'entrée doit être un fichier CSV ou Excel contenant au minimum une
+colonne :
+
+- `Question`
+
+Il peut aussi contenir une colonne optionnelle :
+
+- `Réponse_Attendue`
+
+### Installer DeepEval
+
+```bash
+pip install -r requirements.txt
+```
+
+### Lancer une évaluation RAG
+
+Avant de lancer l'évaluation avec un juge local, vérifiez que Ollama est actif
+et que les modèles nécessaires sont disponibles :
+
+```bash
+ollama serve
+ollama pull qwen2.5:3b
+ollama pull qwen3-embedding
+```
+
+```bash
+python src/deepeval_evaluation.py \
+  --input results/evaluation_rag_resultats_20260608_161244.csv \
+  --limit 5 \
+  --llm-model qwen2.5:3b \
+  --judge-model ollama:qwen2.5:3b
+```
+
+Par défaut, le script évalue :
+
+- `Answer Relevancy` : pertinence de la réponse par rapport à la question ;
+- `Faithfulness` : fidélité de la réponse au contexte récupéré ;
+- `Contextual Relevancy` : pertinence des chunks récupérés.
+
+Pour inclure toutes les métriques disponibles, y compris `Contextual Precision`
+et `Contextual Recall` lorsque `Réponse_Attendue` existe :
+
+```bash
+python src/deepeval_evaluation.py \
+  --input results/evaluation_rag_resultats_20260608_161244.csv \
+  --metrics all \
+  --judge-model ollama:qwen2.5:3b
+```
+
+Les résultats sont exportés dans :
+
+```text
+results/deepeval/
+```
+
+Une version notebook est aussi disponible pour visualiser les tableaux,
+résumés et graphiques :
+
+```text
+notebooks/evaluation_deepeval_rag.ipynb
+```
+
+Phrase utile pour la soutenance :
+
+> DeepEval est utilisé comme outil d'évaluation hors ligne du système RAG. Il
+> permet de mesurer séparément la pertinence des réponses, la fidélité au
+> contexte documentaire et la qualité des passages récupérés par FAISS.
+
+---
+
 ## 📸 Interface
 
 ![alt text](image.png)
@@ -220,6 +297,59 @@ python src/ingest.py
 
 ```bash
 streamlit run src/main.py
+```
+
+---
+
+## 🧪 Evaluation with DeepEval
+
+DeepEval is used to scientifically evaluate the RAG system quality. It is not
+used to answer students in real time; it is used offline to measure retrieval
+and generation quality on a test question set.
+
+The input file must be a CSV or Excel file with at least:
+
+- `Question`
+
+It can also include:
+
+- `Réponse_Attendue`
+
+### Install DeepEval
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run a RAG evaluation
+
+Before running the evaluation with a local judge, make sure Ollama is running
+and the required models are available:
+
+```bash
+ollama serve
+ollama pull qwen2.5:3b
+ollama pull qwen3-embedding
+```
+
+```bash
+python src/deepeval_evaluation.py \
+  --input results/evaluation_rag_resultats_20260608_161244.csv \
+  --limit 5 \
+  --llm-model qwen2.5:3b \
+  --judge-model ollama:qwen2.5:3b
+```
+
+Results are exported to:
+
+```text
+results/deepeval/
+```
+
+Notebook version:
+
+```text
+notebooks/evaluation_deepeval_rag.ipynb
 ```
 
 ---
