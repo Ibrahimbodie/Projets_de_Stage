@@ -1,0 +1,35 @@
+# Environnement virtuel
+env/
+
+# Secrets
+.env
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OpenCode / assistants
+.agents/
+.codex/
+
+# DeepEval
+.deepeval/
+
+# Données générées (vecteurs, résultats, figures)
+vectorstore/
+results/
+outputs/
+evaluation/results/
+evaluation/figures/
+
+# OS
+.DS_Store
+Thumbs.db

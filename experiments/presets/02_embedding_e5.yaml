@@ -1,0 +1,22 @@
+embedding:
+  provider: huggingface
+  model: intfloat/multilingual-e5-large
+  device: cpu
+
+llm:
+  provider: ollama
+  model: qwen2.5:3b
+  temperature: 0.2
+
+evaluation:
+  provider: ollama
+  model: qwen2.5:3b
+  threshold: 0.75
+
+retrieval:
+  top_k: 6
+  max_distance: 1.5
+
+chunk:
+  size: 1000
+  overlap: 200
