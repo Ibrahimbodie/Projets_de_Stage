@@ -4,53 +4,57 @@
 
 ### 📌 Description
 
-Ce projet consiste en la conception d’un assistant virtuel intelligent basé sur les technologies RAG (Retrieval-Augmented Generation) pour aider les étudiants du Master SIM à comprendre les règlements académiques de manière simple et interactive.
+Assistant virtuel pédagogique basé sur **Retrieval-Augmented Generation (RAG)** permettant aux étudiants du Master SIM d'interroger les règlements académiques en langage naturel.
 
 Le système permet de :
 - interroger des documents académiques en langage naturel,
-- rechercher les informations pertinentes,
-- générer des réponses pédagogiques en français simple,
-- afficher les sources utilisées.
-
-L’assistant utilise des modèles LLM locaux via Ollama ainsi qu’une base vectorielle FAISS.
+- rechercher les informations pertinentes via **FAISS**,
+- générer des réponses pédagogiques via **Ollama** (modèles locaux) ou **OpenRouter** (modèles cloud),
+- évaluer la qualité du pipeline avec **DeepEval**.
 
 ---
 
 ## 🚀 Fonctionnalités
 
-- 📄 Lecture de documents PDF, TXT et DOCX
-- 🔍 Recherche sémantique avec FAISS
-- 🤖 Génération de réponses avec Ollama
-- 💬 Interface conversationnelle avec Streamlit
-- 📚 Affichage des sources utilisées
+- 📄 Lecture de PDF, TXT, DOCX
+- 🔍 Recherche sémantique vectorielle (FAISS)
+- 🤖 Génération LLM locale (Ollama) ou cloud (OpenRouter : Gemini, DeepSeek, Qwen...)
+- 💬 Interface Streamlit avec sélecteurs dynamiques (modèle LLM, embedding)
+- 📚 Affichage des sources
 - 📂 Upload de documents utilisateur
-- 🧠 Assistant pédagogique en français simple
+- 🧪 Évaluation modulaire avec DeepEval
 
 ---
 
-## 🏗️ Architecture du Projet
+## 🏗️ Architecture
 
-```text
-src/
-│
-├── main.py            # Interface Streamlit
-├── ingest.py          # Ingestion des documents
-├── retriever.py       # Recherche sémantique
-├── llm_chain.py       # Génération des réponses
-├── user_upload.py     # Gestion des documents utilisateur
+```
+├── app/main.py              # Interface Streamlit (utilisateurs)
+├── src/                     # Logique RAG partagée
+│   ├── llm/                 # Providers LLM (Ollama, OpenRouter)
+│   ├── embeddings/          # Providers d'embedding (HuggingFace, Ollama)
+│   ├── config.py            # Configuration centralisée
+│   ├── ingest.py            # Ingestion vectorielle FAISS
+│   ├── retriever.py         # Recherche sémantique
+│   ├── llm_chain.py         # Génération de réponses
+│   └── evaluation_judge.py  # Juges DeepEval
+├── experiments/             # Pilotage d'expériences
+├── evaluation/              # Notebooks d'évaluation scientifique
+├── benchmark/               # Questions de test (gold standard)
+├── notebooks/               # Notebooks de recherche
+├── config.yaml              # Configuration active
+└── requirements.txt
 ```
 
 ---
 
-## 🛠️ Technologies Utilisées
+## 🛠️ Technologies
 
-- Python
-- Streamlit
-- LangChain
-- Ollama
-- FAISS
-- Qwen2.5
-- Sentence Transformers
+- Python, Streamlit, LangChain
+- **Ollama** (modèles locaux : Qwen2.5)
+- **OpenRouter** (modèles cloud : Gemini, DeepSeek, etc.)
+- FAISS, Sentence Transformers
+- DeepEval, HuggingFace
 
 ---
 
@@ -60,138 +64,94 @@ src/
 
 ```bash
 git clone <repo_url>
-cd project
+cd projet
 ```
 
-### 2. Créer un environnement virtuel
+### 2. Environnement virtuel
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv env
+source env/bin/activate
 ```
 
-### 3. Installer les dépendances
+### 3. Dépendances
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Installer Ollama
+### 4. Configuration
 
-https://ollama.com
+Copier et éditer le fichier `config.yaml` (provider LLM, embedding, température, top_k...).
 
-### 5. Télécharger le modèle
+Créer un fichier `.env` à la racine :
+
+```bash
+echo "OPENROUTER_API_KEY=votre_clé_ici" > .env
+```
+
+### 5. Lancer Ollama (optionnel, pour modèles locaux)
 
 ```bash
 ollama pull qwen2.5:3b
-```
-
-### 6. Lancer Ollama
-
-```bash
 ollama serve
 ```
 
-### 7. Créer la base vectorielle
+### 6. Ingérer les documents
 
 ```bash
 python src/ingest.py
 ```
 
-### 8. Lancer l’application
+### 7. Lancer l'application
 
 ```bash
-streamlit run src/main.py
+streamlit run app/main.py
 ```
 
 ---
 
-## 🧪 Évaluation avec DeepEval
+## 🔀 Changer de modèle
 
-DeepEval est utilisé pour évaluer scientifiquement la qualité du système RAG.
-Il ne sert pas à répondre aux étudiants en temps réel ; il sert à mesurer la
-qualité du retriever et de la génération sur un jeu de questions de test.
+Tout se configure dans `config.yaml` :
 
-Le fichier d'entrée doit être un fichier CSV ou Excel contenant au minimum une
-colonne :
+```yaml
+llm:
+  provider: openrouter       # ou "ollama"
+  model: google/gemini-2.5-flash  # ou "qwen2.5:3b"
 
-- `Question`
-
-Il peut aussi contenir une colonne optionnelle :
-
-- `Réponse_Attendue`
-
-### Installer DeepEval
-
-```bash
-pip install -r requirements.txt
+embedding:
+  provider: huggingface      # ou "ollama"
+  model: BAAI/bge-m3
 ```
 
-### Lancer une évaluation RAG
+Pas de modification de code — architecture **Factory + Strategy**.
 
-Avant de lancer l'évaluation avec un juge local, vérifiez que Ollama est actif
-et que les modèles nécessaires sont disponibles :
+---
 
-```bash
-ollama serve
-ollama pull qwen2.5:3b
-ollama pull qwen3-embedding
-```
+## 🧪 Évaluation DeepEval
 
 ```bash
 python src/deepeval_evaluation.py \
-  --input results/evaluation_rag_resultats_20260608_161244.csv \
-  --limit 5 \
-  --llm-model qwen2.5:3b \
-  --judge-model ollama:qwen2.5:3b
+  --input benchmark/questions.csv \
+  --metrics all
 ```
 
-Par défaut, le script évalue :
+Métriques : Answer Relevancy, Faithfulness, Contextual Precision, Contextual Recall, Contextual Relevancy.
 
-- `Answer Relevancy` : pertinence de la réponse par rapport à la question ;
-- `Faithfulness` : fidélité de la réponse au contexte récupéré ;
-- `Contextual Relevancy` : pertinence des chunks récupérés.
-
-Pour inclure toutes les métriques disponibles, y compris `Contextual Precision`
-et `Contextual Recall` lorsque `Réponse_Attendue` existe :
-
-```bash
-python src/deepeval_evaluation.py \
-  --input results/evaluation_rag_resultats_20260608_161244.csv \
-  --metrics all \
-  --judge-model ollama:qwen2.5:3b
-```
-
-Les résultats sont exportés dans :
-
-```text
-results/deepeval/
-```
-
-Une version notebook est aussi disponible pour visualiser les tableaux,
-résumés et graphiques :
-
-```text
-notebooks/evaluation_deepeval_rag.ipynb
-```
-
-Phrase utile pour la soutenance :
-
-> DeepEval est utilisé comme outil d'évaluation hors ligne du système RAG. Il
-> permet de mesurer séparément la pertinence des réponses, la fidélité au
-> contexte documentaire et la qualité des passages récupérés par FAISS.
+Résultats dans `results/deepeval/`.
 
 ---
 
 ## 📸 Interface
 
-![alt text](image.png)
+![Interface](image.png)
 
 ---
 
-## 🎯 Objectif du Projet
+## 🎯 Objectif
 
-Ce projet a été réalisé dans le cadre d’un stage de Master en Intelligence Artificielle afin de développer un assistant académique intelligent capable d’améliorer l’accès aux règlements universitaires.
+Projet de stage Master en IA — développer un assistant académique intelligent pour améliorer l'accès aux règlements universitaires via le dialogue en langage naturel.
 
 ---
 
@@ -199,168 +159,46 @@ Ce projet a été réalisé dans le cadre d’un stage de Master en Intelligence
 
 ## 📌 Description
 
-This project consists of building an intelligent virtual assistant based on Retrieval-Augmented Generation (RAG) technologies to help Master SIM students better understand academic regulations through natural language interaction.
+A **Retrieval-Augmented Generation (RAG)** academic assistant for Master SIM students to query academic regulations in natural language.
 
-The system is able to:
-- answer questions from academic documents,
-- retrieve relevant information,
-- generate pedagogical answers in simple French,
-- display the sources used.
+The system supports **local LLMs (Ollama)** and **cloud models (OpenRouter)** with a modular architecture.
 
-The assistant uses local LLMs through Ollama and a FAISS vector database.
+## 🏗️ Architecture
 
----
-
-## 🚀 Features
-
-- 📄 PDF, TXT and DOCX document support
-- 🔍 Semantic search using FAISS
-- 🤖 Answer generation with Ollama
-- 💬 Conversational interface with Streamlit
-- 📚 Source citation display
-- 📂 User document upload
-- 🧠 Educational assistant in simple French
-
----
-
-## 🏗️ Project Architecture
-
-```text
-src/
-│
-├── main.py            # Streamlit interface
-├── ingest.py          # Document ingestion
-├── retriever.py       # Semantic retrieval
-├── llm_chain.py       # Answer generation
-├── user_upload.py     # User document management
+```
+├── app/main.py              # Streamlit UI
+├── src/                     # Core RAG logic
+│   ├── llm/                 # LLM providers (Ollama, OpenRouter)
+│   ├── embeddings/          # Embedding providers (HuggingFace, Ollama)
+│   ├── config.py            # Centralized config
+│   ├── ingest.py            # FAISS ingestion
+│   ├── retriever.py         # Semantic search
+│   ├── llm_chain.py         # Answer generation
+│   └── evaluation_judge.py  # DeepEval judges
+├── experiments/             # Experiment runner
+├── evaluation/              # Scientific evaluation notebooks
+├── benchmark/               # Test questions (gold standard)
+├── notebooks/               # Research notebooks
+├── config.yaml              # Active config
+└── requirements.txt
 ```
 
----
+## 🛠️ Tech Stack
 
-## 🛠️ Technologies Used
+Python, Streamlit, LangChain, Ollama, OpenRouter, FAISS, Sentence Transformers, DeepEval
 
-- Python
-- Streamlit
-- LangChain
-- Ollama
-- FAISS
-- Qwen2.5
-- Sentence Transformers
-
----
-
-## ⚙️ Installation
-
-### 1. Clone the repository
+## ⚙️ Quick Start
 
 ```bash
-git clone <repo_url>
-cd project
-```
-
-### 2. Create virtual environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+python -m venv env && source env/bin/activate
 pip install -r requirements.txt
-```
-
-### 4. Install Ollama
-
-https://ollama.com
-
-### 5. Download model
-
-```bash
-ollama pull qwen2.5:3b
-```
-
-### 6. Start Ollama
-
-```bash
-ollama serve
-```
-
-### 7. Build vector database
-
-```bash
+echo "OPENROUTER_API_KEY=your_key" > .env
 python src/ingest.py
+streamlit run app/main.py
 ```
 
-### 8. Run application
+Configure models in `config.yaml`.
 
-```bash
-streamlit run src/main.py
-```
+## 🎯 Objective
 
----
-
-## 🧪 Evaluation with DeepEval
-
-DeepEval is used to scientifically evaluate the RAG system quality. It is not
-used to answer students in real time; it is used offline to measure retrieval
-and generation quality on a test question set.
-
-The input file must be a CSV or Excel file with at least:
-
-- `Question`
-
-It can also include:
-
-- `Réponse_Attendue`
-
-### Install DeepEval
-
-```bash
-pip install -r requirements.txt
-```
-
-### Run a RAG evaluation
-
-Before running the evaluation with a local judge, make sure Ollama is running
-and the required models are available:
-
-```bash
-ollama serve
-ollama pull qwen2.5:3b
-ollama pull qwen3-embedding
-```
-
-```bash
-python src/deepeval_evaluation.py \
-  --input results/evaluation_rag_resultats_20260608_161244.csv \
-  --limit 5 \
-  --llm-model qwen2.5:3b \
-  --judge-model ollama:qwen2.5:3b
-```
-
-Results are exported to:
-
-```text
-results/deepeval/
-```
-
-Notebook version:
-
-```text
-notebooks/evaluation_deepeval_rag.ipynb
-```
-
----
-
-## 📸 Interface
-
-
-![alt text](image.png)
-
----
-
-## 🎯 Project Objective
-
-This project was developed as part of a Master's internship in Artificial Intelligence to create an intelligent academic assistant capable of improving access to university regulations.
+Master's internship project — build an intelligent academic assistant to improve access to university regulations through natural language conversation.
